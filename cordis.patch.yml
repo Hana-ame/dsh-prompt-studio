@@ -1,0 +1,10 @@
+# dsh-prompt-studio bundle patch.
+#
+# Mounts the Host half (HTTP routes behind the GUI prompt editor) at the
+# profile root. The client half is discovered from this package's `dsh.client`
+# declaration; open the sidebar "提示词" entry to edit the active session's
+# system prompt in place.
+- insert:
+    - id: prompt-studio
+      name: 'dsh-prompt-studio'
+      config: {}

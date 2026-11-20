@@ -1,0 +1,28 @@
+{
+  "name": "dsh-prompt-studio",
+  "version": "2.0.0",
+  "private": true,
+  "type": "module",
+  "description": "GUI preset authoring entry: a sidebar 「预设」 panel lists every agent preset, edits its system prompt (persona prefix/suffix) and display metadata in place, and creates new presets from a base template. Saves go into the profile patch (comment-preserving YAML), the live reload re-registers the preset for new sessions.",
+  "exports": {
+    ".": "./index.js",
+    "./presets": "./presets.js",
+    "./client": "./client.js",
+    "./package.json": "./package.json"
+  },
+  "scripts": {
+    "test": "node --check presets.js && node --check client.js && node --test test/presets.test.mjs"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "immediately": true,
+      "inject": [
+        "@deepseek-ai/dsh-client-locale"
+      ]
+    }
+  }
+}
