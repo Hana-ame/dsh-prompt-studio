@@ -2,6 +2,13 @@
   "name": "dsh-prompt-studio",
   "version": "2.0.0",
   "private": true,
+  "license": "MIT",
+  "author": "Hana Amelia",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Hana-ame/dsh-prompt-studio.git"
+  },
+  "homepage": "https://github.com/Hana-ame/dsh-prompt-studio#readme",
   "type": "module",
   "description": "GUI preset authoring entry: a sidebar 「预设」 panel lists every agent preset, edits its system prompt (persona prefix/suffix) and display metadata in place, and creates new presets from a base template. Saves go into the profile patch (comment-preserving YAML), the live reload re-registers the preset for new sessions.",
   "exports": {

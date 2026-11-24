@@ -2,6 +2,36 @@
 
 DSH Web GUI 里的 **preset 编写入口**：侧边栏「预设」按钮 → 列出全部 agent preset，**直接编辑它们的 system prompt**（persona prefix/suffix）与名称/描述/order，或从模板新建 preset。改的是 preset 定义本身，不是某个会话的临时覆盖。
 
+- **原地编辑**：`profile patch` 里的 preset 直接改写原行，不产生重复定义
+- **bundle preset 也能改**：保存时自动在 patch 末尾追加一条同 id 的完整覆盖行，不动 bundle 本身
+- **注释与 `!!js` 表达式零损伤**：走 `yaml` 文档 API，不是 `load`/`dump` 往返
+- **压缩参数可视化**：`keepRounds` / `reminder` 等 compaction 参数直接在表单里改
+- **保存即热重载**：写入后 HMR live reconcile 重新注册，新会话立刻生效
+
+## 安装
+
+本包是 DSH profile 的插件，不发布到 npm（`package.json` 里没有 registry 依赖，纯 ESM，仅需 Node 18+）。
+
+1. 把仓库放进 DSH profile 的 `node_modules`（本地开发推荐直接 `link`，这样它能被 `hmr.root` 监视）：
+
+   ```bash
+   git clone https://github.com/Hana-ame/dsh-prompt-studio.git
+   cd dsh-prompt-studio
+   ln -s "$PWD" <profile>/node_modules/dsh-prompt-studio     # Windows 用 mklink /J
+   ```
+
+2. 在 profile 的 patch YAML 里挂载 Host 半截。Loader 行的 `name` **必须写精确包名**，不能写 `/presets` 这类子路径 —— client 模块扫描只认精确包名，`index.js` 已经做了转发：
+
+   ```yaml
+   - id: preset-studio
+     name: 'dsh-prompt-studio'
+     config: {}
+   ```
+
+   如果 profile 已经 `patch` 了这个包自带的 bundle（`cordis.patch.yml`），会自动插入 `id: prompt-studio` 的同名行，无需手写。
+
+3. 刷新 Web GUI（client 模块由 clientModules 扫描加载，无需重启进程）。
+
 ## 在哪、怎么用
 
 1. 刷新 Web GUI（client 模块由 clientModules 扫描加载，无需重启）。
@@ -15,6 +45,17 @@ DSH Web GUI 里的 **preset 编写入口**：侧边栏「预设」按钮 → 列
 
 列表标记：`profile patch` = 定义在本 profile 的 patch 里（原地编辑）；`bundle 定义 · 编辑将生成覆盖行` = 定义在 bundle 里（保存时自动追加一条同 id 的完整覆盖行到 patch 末尾）；`激活失败` = 该 preset 当前加载有诊断。
 
+## 目录结构
+
+| 文件 | 行数 | 作用 |
+|---|---|---|
+| `index.js` | 13 | 包入口，把精确包名转发到 `presets.js`，让一行 Loader 同时挂 Host 路由与 client 模块 |
+| `presets.js` | 391 | Host 半截：`/preset-studio/list`、`/save`、`/create` 三个路由 + YAML patch 读写 |
+| `compaction-config.js` | 267 | 压缩参数路由（`/preset-studio/compaction` GET/POST），单独行挂载 |
+| `client.js` | 347 | Web client：`sidebar.panellist`「预设」入口与 `main` 编辑面板 |
+| `cordis.patch.yml` | 8 | 自带 bundle patch，插一行 `prompt-studio` |
+| `test/presets.test.mjs` | 169 | 5 个用例（见下） |
+
 ## 实现
 
 - Host：`presets.js`，三个路由
@@ -24,7 +65,7 @@ DSH Web GUI 里的 **preset 编写入口**：侧边栏「预设」按钮 → 列
   写 path 用 `yaml` 文档 API（**注释与 `!!js` 表达式完整保留**），写前自动 `.bak-preset-editor-<ts>` 备份、临时文件 rename 原子替换。
 - Client：`client.js`，`sidebar.panellist`「预设」入口 + `main` 编辑面板（persona + 压缩参数表单）。
 - 压缩参数路由：`compaction-config.js`（单独行挂载，`/preset-studio/compaction` GET/POST），便于用 `?rev=` 热更新而不动精确包名的 client 扫描行。
-- 挂载：profile patch 单行 `- id: preset-studio / name: 'dsh-prompt-studio/presets'`；包已 link 进 profile `node_modules`；插件目录在 `hmr.root` 里（改代码可热重载）。
+- 挂载：profile patch 单行 `- id: preset-studio / name: 'dsh-prompt-studio'`；包已 link 进 profile `node_modules`；插件目录在 `hmr.root` 里（改代码可热重载）。
 
 ## 测试
 
@@ -39,3 +80,7 @@ npm test   # node --check ×2 + node --test test/presets.test.mjs
 - 保存会按 YAML 文档风格重新序列化文件（注释与 `!!js` 表达式保留；实测与原文差异仅个别空行归一化）。
 - 只编辑 persona 与元数据；工具组成（plugins 行）目前「复制模板」级别，逐行增删工具仍需手改 YAML。
 - 已打开的会话不重新组装 preset，新会话才用新提示词。
+
+## License
+
+[MIT](./LICENSE) © 2026 Hana Amelia
